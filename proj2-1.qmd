@@ -1,0 +1,153 @@
+---
+title: "DATA1001 Project 2"
+author: "SID 540494132"
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    code-fold: true
+---
+
+
+# Client Bio 👔
+
+<img src="BCNA_Logo.jpg" alt="BCNA Logo" width="150px" align="right"/>
+
+Breast Cancer Network Australia (BCNA) is an organization which focuses on breast cancer treatment and prevention.  They ensure Australians affected by breast cancer receive the very best care, treatment and support appropriate to their individual needs.
+[🧷](https://www.bcna.org.au/about-us/our-people/)
+
+
+
+
+# Recommendation📌
+
+AJCC Staging System remains valuabel and can be continuously used for treatment guidance in clinical view, as it clearly reflects the cellular level spread of cancer and effectively predicts patients' survival outcomes. In this context, higher stage suggests more advanced illness and requires urgent treatment. However, since the staging system is not highly related with progression and differentiation of cancer, more comprehensive evaluations are needed to fully capture the patients' situation.
+
+
+
+# Evidence📈
+
+## Cellular level: reflecting cancer spread clearly
+```{r,message=FALSE,warning=FALSE}
+library(tidyverse)
+
+proj2 = na.omit(read.csv("breast_cancer.csv"))
+
+# combine data of positive/ examined
+proj2$Proportion = proj2$Regional.Node.Positive / proj2$Regional.Node.Examined
+
+# lymph nodes
+ggplot(proj2, aes(x = X6th.Stage, y = Proportion, fill = X6th.Stage)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Set3") +
+  labs(title = "Proportion of Positive Nodes by AJCC Stage",
+       x = "AJCC Stage", y = "Positive Nodes / Examined Nodes") +
+  theme_minimal()
+
+
+```
+
+The boxplot illustrates the proportion of positive nodes according to different AJCC Stages. As the graph shows, **the mean proportion of positive lymph nodes increases with stage**. 
+
+Researches have shown that the overall number of positive lymph nodes are highly correlated with the status of breast cancer, including the stability (Tonellotto, F, 2019). As a result, positive lymph nodes are one of the most important biological markers for treating breast cancer. **Thus, AJCC Stage standards reflect the current cancer status in the biological level clearly**.
+
+## Anatomical level: weak association with cancer progression & differentiation
+```{r,message=FALSE,warning=FALSE}
+library(tidyverse)
+
+proj2 = na.omit(read.csv("breast_cancer.csv"))
+
+#progression
+ggplot(proj2, aes(x = X6th.Stage, fill = Grade)) +
+  geom_bar(position = "fill") +  
+  labs(title = "Grade by AJCC Stages", x = "6th AJCC Stage", y = "Proportion") +
+  scale_fill_brewer(palette = "Set3") +
+  theme_minimal()
+
+#differentiation
+ggplot(proj2, aes(x = X6th.Stage, fill = differentiate)) +
+  geom_bar(position = "fill") +  
+  labs(title = "Differentiation level by AJCC Stage", x = "6th AJCC Stage",y = "Proportion") +
+  scale_fill_brewer(palette = "Set3") +
+  theme_minimal()
+
+```
+Grading referes to how abnormal the cancer cells and tissues appear under a microscope, while differentiation reflects the aggresiveness (Cancer Reseaerch UK, 2023). The two  proportion barplot shows the proportion of tumor Grade and Differentiation status across different stages. The graph shows that while there’s increase in the proportion of Grade 3 tumors and moderately differentiated cancer cells in higher AJCC stages, **the overall pattern is relatively similar**. 
+
+Each stage includes a mix of grades and differentiate levels,which suggests that the AJCC standard is less effective in predicting the progression and differentiation of cancer cells. **Additional biomarkers or other clinical evaluations are necessary to get a full understanding of the cancer status in an anatomical level**.
+
+
+
+## Clinical level: effectively predicting patients’ survival outcomes
+```{r,message=FALSE,warning=FALSE}
+library(survival)
+library(survminer)
+library(tidyverse)
+
+proj2 = na.omit(read.csv("breast_cancer.csv"))
+
+# Prepare status as numeric
+Status_numeric = ifelse(proj2$Status == "Dead", 1, 0)
+
+# Fit model
+fit_model = survfit(Surv(Survival.Months, Status_numeric) ~ X6th.Stage, data = proj2)
+
+# survival possibility plot
+ggsurvplot(fit_model,
+           data = proj2,
+           pval = TRUE,
+           xlab = "Time (Months)",
+           ylab = "Survival Probability",
+           break.time.by = 25,
+           legend.title = "AJCC Stage",
+           legend.labs = c("IIA", "IIB", "IIIA", "IIIB", "IIIC"),
+           palette = "Dark2",
+           ggtheme = theme_minimal())
+
+```
+
+```{r,message=FALSE,warning=FALSE}
+library(tidyverse)
+
+proj2 = na.omit(read.csv("breast_cancer.csv"))
+
+# summarize counts
+table_data = proj2 %>%
+  group_by(X6th.Stage, Status) %>%
+  summarise(Count = n()) %>%
+  pivot_wider(names_from = Status, values_from = Count, values_fill = 0) %>%
+  mutate(Total = rowSums(across(where(is.numeric))),
+    Survival_Rate = round(`Alive` / Total * 100, 1),)
+
+# display the table
+knitr::kable(table_data, caption = "Survival Rates by AJCC Stage")
+```
+The Kaplan-Meier survival curve and the summary table of death rate illustrates the probability of patients’ survival outcomes in each AJCC stage. Both of these demonstrate **a clear trend that higher AJCC stages are correlated with lower survival possibilities and shorter life span**. 
+
+This indicates that patients in more advanced stages are more likely to be in a dangerous physiological situation, which requires urgent treatment and more intensive monitoring. **Therefore, clinically, the AJCC Staging system is able to act as a reliable tool for predicting patients’ survival outcomes**.
+
+## Limitations🎭
+Throughout the whole research, the data is only collected from female patients who were diagnosed during 2006-2010, with the whole dataset creating in 2017, which  may not align with the current clinical technical environment. For better analysis, statistics using the old staging system was excluded, suggesting possible inaccuracy.
+
+
+# Ethics Statement 🪙
+
+The report reflects the **Shared value of Professionalism**, as clinical standard and terminologies for cancer are carefully researched according to reliable scientific literature.
+
+In addition, it is also adhered to **Ethical Principle of Exposing and Reviewing Methods and Findings** by employing and referencing the key research methods used in null data set.
+
+# AI usage statement 🤖
+
+AI is not used for prompting any content for this report. Data obtained from real patients are often considered not suitable for AI processing, as it may leads to information leakage and consent related issues.
+
+# Acknowledgements📚
+
+**Ed discussion posts**:
+https://edstem.org/au/courses/19992/discussion/2663541?comment=5942328
+
+https://edstem.org/au/courses/19992/discussion/2674071
+
+**Reference list**:
+Tonellotto, F., Bergmann, A., de Souza Abrahão, K., de Aguiar, S. S., Bello, M. A., & Thuler, L. C. S. (2019). Impact of Number of Positive Lymph Nodes and Lymph Node Ratio on Survival of Women with Node-Positive Breast Cancer. European journal of breast health, 15(2), 76–84.https://doi.org/10.5152/ejbh.2019.4414
+
+Cancer Research UK. (2023, May 10). Stages and grades of breast cancer. https://www.cancerresearchuk.org/about-cancer/breast-cancer/stages-grades
